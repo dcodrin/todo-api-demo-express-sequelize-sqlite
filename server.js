@@ -52,14 +52,21 @@ app.post("/todos", (req, res)=> {
 });
 //DELETE /todos/:id delete todo by id
 app.delete("/todos/:id", (req, res)=> {
-    //Use filter to delete matching todo
-    //Aslo return the user the todo that was deleted
-    var matched;
-    todos = todos.filter((todo)=> {
-        todo.id === Number(req.params.id) ? matched = todo : null;
-        return todo.id !== Number(req.params.id);
-    });
-    matched ? res.json(matched) : res.status(404).send("No match found.")
+
+    db.todo.destroy({
+        where: {
+            id: Number(req.params.id)
+        }
+    }).then((rowsDeleted)=>{
+        if(rowsDeleted === 0){
+            res.status(404).send("No match found.")
+        } else {
+            res.status(204).send("Todo deleted.")
+        }
+    }).catch((e)=>{
+        res.json(e);
+    })
+
 });
 //PUT /todos/id
 app.put("/todos/:id", (req, res)=> {
