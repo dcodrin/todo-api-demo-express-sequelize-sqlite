@@ -2,8 +2,7 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var app = express();
 var PORT = process.env.PORT || 3000;
-var todos = [];
-var todoNextId = 1;
+var db = require("./db.js");
 
 //Use bodyParser to parse data
 app.use(bodyParser.json());
@@ -14,83 +13,42 @@ app.get("/", (req, res)=> {
 //GET /todos all todos
 app.get("/todos", (req, res)=> {
     //Use the built-in .json() method to send back our data in JSON format.
-    //If query parameters are passed do a check for what they are and filter the results accordingly
-    var queryParams = req.query;
-    var filteredTodos = todos.filter((todo)=> {
-
-        var checkCompleted = false;
-        var checkDescription = false;
-        //Iterate over all queries.
-        for (prop in queryParams) {
-
-            if (prop === "completed") {
-                if (todo.hasOwnProperty(prop) && todo[prop].toString() === queryParams[prop]) {
-                    checkCompleted = true;
-                }
-            }
-            if (prop === "description") {
-                if (todo.hasOwnProperty(prop) && todo[prop].toLowerCase().indexOf(queryParams[prop].toLowerCase()) > -1) {
-                    checkDescription = true;
-                }
-            }
-        }
-
-        //Use Object.keys() to find out how many queries. If single query run one check if multiple queries run
-        // different check.
-
-        if (Object.keys(queryParams).length > 1) {
-            if (checkCompleted && checkDescription) {
-                return true;
-            }
-        } else if (Object.keys(queryParams).length < 2) {
-            if (checkCompleted || checkDescription) {
-                return true;
-            }
-        } else {
-            return false;
-        }
-
-    });
-
-    //Check to see filtered if filtered todos should be returned or all todos. If the filtered todos list is empty
-    // inform the user.
-
-    if (filteredTodos.length > 0 || Object.keys(queryParams).length > 0) {
-        if (filteredTodos.length < 1) {
-            return res.status(404).send("No matches found.")
-        } else {
-            return res.json(filteredTodos);
-        }
-    } else if (todos.length > 0) {
-        return res.json(todos);
-    } else {
-        return res.status(404).send("Todo list is empty")
+    var query = req.query;
+    var where = {};
+    if(query.completed){
+        where.completed = query.completed === "true" ? true : false
     }
+    if(query.description){
+        where.description = {
+            $like: `%${query.description}%`
+        }
+    }
+    db.todo.findAll({where: where}).then((todos)=>{
+        todos.length > 0 ? res.json(todos) : res.status(404).send("No matches found");
+    }).catch((e)=>{
+        return res.json(e);
+    })
 });
 //GET /todos/:id get individual todo
 app.get("/todos/:id", (req, res)=> {
-    //Using reduce we search for a match.
-    var found = todos.reduce((acc, todo)=> {
-        return todo.id === Number(req.params.id) ? acc = todo : acc;
-    }, false);
-    found ? res.json(found) : res.status(404).send("Not match found.");
+    //Use sequelize findById to retrieve a match
+    db.todo.findById(Number(req.params.id)).then((todo)=>{
+        todo ? res.json(todo) : res.status(404).send("Todo not found.")
+    }).catch((e)=>{
+        return res.json(e);
+    })
 });
 //POST /todos new todo
 app.post("/todos", (req, res)=> {
-    //Do basic data validation
-    if (typeof req.body.description === "string" && typeof req.body.completed === "boolean") {
-        //Filter data
-        var todo = {description: req.body.description, completed: req.body.completed};
-        //Trim white spaces from description
-        todo.description = todo.description.trim();
-        //Add id to each todo
-        todo.id = todoNextId++;
-        todos.push(todo);
-        res.json(todo);
-    } else {
-        //Send a 400 error which means that bad data was provided
-        res.status(400).send("Bad data.");
-    }
+    db.todo.create({
+        description: req.body.description ? req.body.description.trim() : null,
+        completed: req.body.completed ? req.body.completed : false
+    }).then((todo)=> {
+        return res.json(todo);
+    }).catch((e)=> {
+        return res.status(400).json(e);
+    });
+
 });
 //DELETE /todos/:id delete todo by id
 app.delete("/todos/:id", (req, res)=> {
@@ -138,7 +96,8 @@ app.put("/todos/:id", (req, res)=> {
 
 });
 
-app.listen(PORT, ()=> {
-    console.log(`Express listening on port ${PORT}`)
+db.sequelize.sync().then(()=> {
+    app.listen(PORT, ()=> {
+        console.log(`Express listening on port ${PORT}`)
+    });
 });
-

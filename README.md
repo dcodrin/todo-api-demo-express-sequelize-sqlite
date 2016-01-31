@@ -1,2 +1,3 @@
-This is a basic example of express. There are two files in this repo. One is server.js and the other 
-server-underscore.js. One version is using javascript es6 while the other is using underscore for data manipulation.
+This is a basic demo of an express server using sequelize.
+
+Our database is initiated in db.js. The todo model is imported into db.js from todo.js.
