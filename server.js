@@ -40,10 +40,12 @@ app.get("/todos/:id", (req, res)=> {
 });
 //POST /todos new todo
 app.post("/todos", (req, res)=> {
-    db.todo.create({
-        description: req.body.description ? req.body.description.trim() : null,
-        completed: req.body.completed ? req.body.completed : false
-    }).then((todo)=> {
+
+    var newTodo = {};
+    if(req.body.description){newTodo.description = req.body.description}
+    if(req.body.completed){newTodo.completed = req.body.completed}
+
+    db.todo.create(newTodo).then((todo)=> {
         return res.json(todo);
     }).catch((e)=> {
         return res.status(400).json(e);
@@ -66,41 +68,30 @@ app.delete("/todos/:id", (req, res)=> {
     }).catch((e)=>{
         res.json(e);
     })
-
 });
 //PUT /todos/id
 app.put("/todos/:id", (req, res)=> {
-    //Data validation;
-    var validAttributes = {};
-    if (req.body.hasOwnProperty("completed") && typeof req.body.completed === "boolean") {
-        validAttributes.completed = req.body.completed;
-    } else if (req.body.hasOwnProperty("completed")) {
-        return res.status(400).send("Please make sure 'completed' field is a boolean.")
-    }
-    if (req.body.hasOwnProperty("description") && typeof req.body.description === "string" && req.body.description.trim().length > 0) {
-        validAttributes.description = req.body.description
-    } else if (req.body.hasOwnProperty("description")) {
-        return res.status(400).send("Please make sure 'description' field is a string.")
-    }
-    //Updating todo
-    //First find a match by id
-    var matched;
-    todos.forEach((todo)=> {
-        todo.id === Number(req.params.id) ? matched = todo : null;
-    });
-    //If match found
-    if (matched) {
-        for (var prop1 in validAttributes) {
-            if (matched.hasOwnProperty(prop1)) {
-                if (prop1 === "description") {
-                    //Check for description and trim it
-                    matched[prop1] = validAttributes[prop1].trim()
-                } else matched[prop1] = validAttributes[prop1];
-            }
-        }
-    }
-    matched ? res.json(matched) : res.status(404).send("No match found.");
 
+    var update = {};
+
+    if(req.body.description){update.description = req.body.description}
+    if(req.body.completed){update.completed = req.body.completed}
+
+    db.todo.findById(Number(req.params.id))
+    .then((todo)=>{
+        if(todo){
+            return todo.update(update)
+        } else {
+            res.status(404).send("No match found.")
+        }
+        //Notice how we pass a second argument to our then() call
+    }, ()=>{
+        res.status(500).send();
+    }).then((todo)=>{
+        res.json(todo.toJSON());
+    }, (e)=>{
+        res.status(400).json(e);
+    })
 });
 
 db.sequelize.sync().then(()=> {

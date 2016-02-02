@@ -12,5 +12,19 @@ module.exports = (sequelize, DataTypes)=> {
             allowNull: false,
             defaultValue: false
         }
+    }, {
+        validate: {
+            //THESE CANNOT USE ES6 notation
+            descriptionIsString: function () {
+                if (typeof this.description !== "string") {
+                    throw new Error('Description must be string.')
+                }
+            },
+            completedIsBoolean: function () {
+                if (typeof this.completed !== "boolean") {
+                    throw new Error("Completed must be boolean")
+                }
+            }
+        }
     });
 };
