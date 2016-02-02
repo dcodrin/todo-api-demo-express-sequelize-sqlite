@@ -82,7 +82,7 @@ app.put("/todos/:id", (req, res)=> {
         if(todo){
             return todo.update(update)
         } else {
-            res.status(404).send("No match found.")
+            return res.status(404).send("No match found.")
         }
         //Notice how we pass a second argument to our then() call
     }, ()=>{
