@@ -100,7 +100,9 @@ app.post("/users", (req, res)=>{
     if(req.body.email){newUser.email = req.body.email}
     if(req.body.password){newUser.password = req.body.password}
     db.user.create(newUser).then((user)=> {
-        return res.json(user);
+        //We use user.toPublicJSON which was defined in user.js to only send back specific data. toPublicJSON() is a
+        // function created under the instanceMethods of the user model.
+        return res.json(user.toPublicJSON());
     }).catch((e)=> {
         return res.status(400).json(e);
     });
