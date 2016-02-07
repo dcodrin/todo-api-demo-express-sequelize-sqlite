@@ -2,6 +2,8 @@
 //For example given ABC123 will always return the same hash however there is no way of retrieving ABC123 from the hash.
 
 var bcrypt = require("bcrypt");
+var crypto = require("crypto-js");
+var jwt = require("jsonwebtoken");
 
 
 //there's a specific format for a file that is being called with sequelize.import (what we do in db.js)
@@ -78,6 +80,30 @@ module.exports = (sequelize, DataTypes)=> {
                 userInfo.createdAt = json.createdAt;
                 userInfo.updatedAt = json.updatedAt;
                 return userInfo;
+            },
+            generateToken: function (type) {
+                //the type is used to differentiate between login or forgotten password for example.
+                //type is a string (ex "authentication")
+                if (typeof type !== "string"){
+                    return undefined;
+                }
+                //We make use of try catch for this part. Try will try to run the code and if there is an error it
+                // will be passed onto catch.
+                try {
+                    //We are creating a string for crypto.
+                    var stringData = JSON.stringify({id: this.get("id"), type: type});
+                    //We use the string that we created to pass it to crypto and also pass it a global password "abc123"
+                    var encryptedData = crypto.AES.encrypt(stringData, "abc123").toString();
+                    //We create our token
+                    var token = jwt.sign({
+                        token: encryptedData
+                    }, "abc");
+                    return token;
+                }
+                catch (e) {
+                    console.error(e);
+                    return undefined;
+                }
             }
         },
         //A class method can be used on the model (ex user, todo). We are creating our own class methods

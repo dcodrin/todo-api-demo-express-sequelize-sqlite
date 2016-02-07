@@ -16,26 +16,26 @@ app.get("/todos", (req, res)=> {
     //Use the built-in .json() method to send back our data in JSON format.
     var query = req.query;
     var where = {};
-    if(query.completed){
+    if (query.completed) {
         where.completed = query.completed === "true" ? true : false
     }
-    if(query.description){
+    if (query.description) {
         where.description = {
             $like: `%${query.description}%`
         }
     }
-    db.todo.findAll({where: where}).then((todos)=>{
+    db.todo.findAll({where: where}).then((todos)=> {
         todos.length > 0 ? res.json(todos) : res.status(404).send("No matches found");
-    }).catch((e)=>{
+    }).catch((e)=> {
         return res.json(e);
     })
 });
 //GET /todos/:id get individual todo
 app.get("/todos/:id", (req, res)=> {
     //Use sequelize findById to retrieve a match
-    db.todo.findById(Number(req.params.id)).then((todo)=>{
+    db.todo.findById(Number(req.params.id)).then((todo)=> {
         todo ? res.json(todo) : res.status(404).send("Todo not found.")
-    }).catch((e)=>{
+    }).catch((e)=> {
         return res.json(e);
     })
 });
@@ -43,8 +43,12 @@ app.get("/todos/:id", (req, res)=> {
 app.post("/todos", (req, res)=> {
 
     var newTodo = {};
-    if(req.body.description){newTodo.description = req.body.description}
-    if(req.body.completed){newTodo.completed = req.body.completed}
+    if (req.body.description) {
+        newTodo.description = req.body.description
+    }
+    if (req.body.completed) {
+        newTodo.completed = req.body.completed
+    }
 
     db.todo.create(newTodo).then((todo)=> {
         return res.json(todo);
@@ -60,13 +64,13 @@ app.delete("/todos/:id", (req, res)=> {
         where: {
             id: Number(req.params.id)
         }
-    }).then((rowsDeleted)=>{
-        if(rowsDeleted === 0){
+    }).then((rowsDeleted)=> {
+        if (rowsDeleted === 0) {
             res.status(404).send("No match found.")
         } else {
             res.status(204).send("Todo deleted.")
         }
-    }).catch((e)=>{
+    }).catch((e)=> {
         res.json(e);
     })
 });
@@ -75,31 +79,39 @@ app.put("/todos/:id", (req, res)=> {
 
     var update = {};
 
-    if(req.body.description){update.description = req.body.description}
-    if(req.body.completed){update.completed = req.body.completed}
+    if (req.body.description) {
+        update.description = req.body.description
+    }
+    if (req.body.completed) {
+        update.completed = req.body.completed
+    }
 
     db.todo.findById(Number(req.params.id))
-    .then((todo)=>{
-        if(todo){
-            return todo.update(update)
-        } else {
-            return res.status(404).send("No match found.")
-        }
-        //Notice how we pass a second argument to our then() call
-    }, ()=>{
-        res.status(500).send();
-    }).then((todo)=>{
+        .then((todo)=> {
+            if (todo) {
+                return todo.update(update)
+            } else {
+                return res.status(404).send("No match found.")
+            }
+            //Notice how we pass a second argument to our then() call
+        }, ()=> {
+            res.status(500).send();
+        }).then((todo)=> {
         res.json(todo.toJSON());
-    }, (e)=>{
+    }, (e)=> {
         res.status(400).json(e);
     })
 });
 //POST /users/
-app.post("/users", (req, res)=>{
+app.post("/users", (req, res)=> {
     var newUser = {};
     //Create new user only with the email and password fields
-    if(req.body.email){newUser.email = req.body.email}
-    if(req.body.password){newUser.password = req.body.password}
+    if (req.body.email) {
+        newUser.email = req.body.email
+    }
+    if (req.body.password) {
+        newUser.password = req.body.password
+    }
     db.user.create(newUser).then((user)=> {
         //We use user.toPublicJSON which was defined in user.js to only send back specific data. toPublicJSON() is a
         // function created under the instanceMethods of the user model.
@@ -110,19 +122,29 @@ app.post("/users", (req, res)=>{
 });
 
 //POST /users/login
-app.post("/users/login", (req, res)=>{
+app.post("/users/login", (req, res)=> {
     var loginUser = {};
-    if(typeof req.body.email === "string"){loginUser.email = req.body.email}
-    if(typeof req.body.password === "string"){loginUser.password = req.body.password}
+    if (typeof req.body.email === "string") {
+        loginUser.email = req.body.email
+    }
+    if (typeof req.body.password === "string") {
+        loginUser.password = req.body.password
+    }
     console.log(loginUser);
-    db.user.authentication(loginUser).then((user)=>{
-        console.log(user);
-        res.json(user.toPublicJSON());
-    }, ()=>{
+    db.user.authentication(loginUser).then((user)=> {
+        //The token will be sent in the header.
+        var token = user.generateToken("authentication");
+
+        if (token) {
+            res.header("Auth", token).json(user.toPublicJSON());
+        } else {
+            return res.status(401).send("Authentication failed.")
+        }
+    }, ()=> {
         res.status(401).send("Authentication failed.")
     });
 });
-db.sequelize.sync({fore: true}).then(()=> {
+db.sequelize.sync({force: true}).then(()=> {
     app.listen(PORT, ()=> {
         console.log(`Express listening on port ${PORT}`)
     });
