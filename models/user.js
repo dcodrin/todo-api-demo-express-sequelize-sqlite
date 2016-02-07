@@ -21,5 +21,14 @@ module.exports = (sequelize, DataTypes)=> {
                 len: [5, 30]
             }
         }
+    }, {//We pass a third argument that will hold our hooks. Hooks can be used to do some date manipulation before or after certain actions.
+        //In this case we use hooks to set the email field to lower case before attempting to validate it.
+        //Notice this would be the same place we can pass our validation functions.
+        hooks : {
+            beforeValidate: function(user, options){
+                // take user.email and convert to lower case if it's a string
+                if(typeof user.email === "string"){user.email = user.email.toLowerCase()}
+            }
+        }
     });
 };
