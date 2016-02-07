@@ -3,6 +3,7 @@ var bodyParser = require("body-parser");
 var app = express();
 var PORT = process.env.PORT || 3000;
 var db = require("./db.js");
+var bcrypt = require("bcrypt");
 
 //Use bodyParser to parse data
 app.use(bodyParser.json());
@@ -93,7 +94,7 @@ app.put("/todos/:id", (req, res)=> {
         res.status(400).json(e);
     })
 });
-
+//POST /users/
 app.post("/users", (req, res)=>{
     var newUser = {};
     //Create new user only with the email and password fields
@@ -108,7 +109,20 @@ app.post("/users", (req, res)=>{
     });
 });
 
-db.sequelize.sync().then(()=> {
+//POST /users/login
+app.post("/users/login", (req, res)=>{
+    var loginUser = {};
+    if(typeof req.body.email === "string"){loginUser.email = req.body.email}
+    if(typeof req.body.password === "string"){loginUser.password = req.body.password}
+    console.log(loginUser);
+    db.user.authentication(loginUser).then((user)=>{
+        console.log(user);
+        res.json(user.toPublicJSON());
+    }, ()=>{
+        res.status(401).send("Authentication failed.")
+    });
+});
+db.sequelize.sync({fore: true}).then(()=> {
     app.listen(PORT, ()=> {
         console.log(`Express listening on port ${PORT}`)
     });
