@@ -4,6 +4,8 @@ var app = express();
 var PORT = process.env.PORT || 3000;
 var db = require("./db.js");
 var bcrypt = require("bcrypt");
+//Since our middleware is a function that takes a db variable we are passing the db right here.
+var middleware = require("./middleware.js")(db);
 
 //Use bodyParser to parse data
 app.use(bodyParser.json());
@@ -12,7 +14,7 @@ app.get("/", (req, res)=> {
     res.send("Todo API Root");
 });
 //GET /todos all todos
-app.get("/todos", (req, res)=> {
+app.get("/todos",middleware.requireAuthentication, (req, res)=> {
     //Use the built-in .json() method to send back our data in JSON format.
     var query = req.query;
     var where = {};
@@ -31,7 +33,7 @@ app.get("/todos", (req, res)=> {
     })
 });
 //GET /todos/:id get individual todo
-app.get("/todos/:id", (req, res)=> {
+app.get("/todos/:id",middleware.requireAuthentication, (req, res)=> {
     //Use sequelize findById to retrieve a match
     db.todo.findById(Number(req.params.id)).then((todo)=> {
         todo ? res.json(todo) : res.status(404).send("Todo not found.")
@@ -40,7 +42,7 @@ app.get("/todos/:id", (req, res)=> {
     })
 });
 //POST /todos new todo
-app.post("/todos", (req, res)=> {
+app.post("/todos",middleware.requireAuthentication, (req, res)=> {
 
     var newTodo = {};
     if (req.body.description) {
@@ -58,7 +60,7 @@ app.post("/todos", (req, res)=> {
 
 });
 //DELETE /todos/:id delete todo by id
-app.delete("/todos/:id", (req, res)=> {
+app.delete("/todos/:id",middleware.requireAuthentication, (req, res)=> {
 
     db.todo.destroy({
         where: {
@@ -75,7 +77,7 @@ app.delete("/todos/:id", (req, res)=> {
     })
 });
 //PUT /todos/id
-app.put("/todos/:id", (req, res)=> {
+app.put("/todos/:id",middleware.requireAuthentication, (req, res)=> {
 
     var update = {};
 
@@ -144,7 +146,7 @@ app.post("/users/login", (req, res)=> {
         res.status(401).send("Authentication failed.")
     });
 });
-db.sequelize.sync({force: true}).then(()=> {
+db.sequelize.sync().then(()=> {
     app.listen(PORT, ()=> {
         console.log(`Express listening on port ${PORT}`)
     });

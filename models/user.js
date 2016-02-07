@@ -84,7 +84,7 @@ module.exports = (sequelize, DataTypes)=> {
             generateToken: function (type) {
                 //the type is used to differentiate between login or forgotten password for example.
                 //type is a string (ex "authentication")
-                if (typeof type !== "string"){
+                if (typeof type !== "string") {
                     return undefined;
                 }
                 //We make use of try catch for this part. Try will try to run the code and if there is an error it
@@ -137,6 +137,34 @@ module.exports = (sequelize, DataTypes)=> {
                     }).catch((e)=> {
                         reject();
                     });
+                })
+            },
+            findByToken: function (token) {
+                return new Promise((resolve, reject)=> {
+                    //We are using a try catch block again
+                    try {
+                        //The steps to decrypt the data
+                        var decodedJWT = jwt.verify(token, "abc");
+                        var bytes = crypto.AES.decrypt(decodedJWT.token, "abc123");
+                        var tokenData = JSON.parse(bytes.toString(crypto.enc.Utf8));
+
+                        //Now we have access to the id and type
+                        console.log(tokenData);
+
+                        user.findById(tokenData.id).then((user)=>{
+                            if(user){
+                                resolve(user);
+                            } else {
+                                reject();
+                            }
+                        }, (e)=>{
+                            reject()
+                        })
+
+                    }
+                    catch (e) {
+                        reject();
+                    }
                 })
             }
         }
