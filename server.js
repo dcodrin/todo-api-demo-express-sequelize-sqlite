@@ -94,6 +94,18 @@ app.put("/todos/:id", (req, res)=> {
     })
 });
 
+app.post("/users", (req, res)=>{
+    var newUser = {};
+    //Create new user only with the email and password fields
+    if(req.body.email){newUser.email = req.body.email}
+    if(req.body.password){newUser.password = req.body.password}
+    db.user.create(newUser).then((user)=> {
+        return res.json(user);
+    }).catch((e)=> {
+        return res.status(400).json(e);
+    });
+});
+
 db.sequelize.sync().then(()=> {
     app.listen(PORT, ()=> {
         console.log(`Express listening on port ${PORT}`)

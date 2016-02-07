@@ -17,7 +17,10 @@ if (env === "production") {
 
 var db = {};
 
+//sequelize.import allows us to load models from different files.
+//this is good for keeping the application organized
 db.todo = sequelize.import(__dirname + "/models/todo.js");
+db.user = sequelize.import(__dirname + "/models/user.js");
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 

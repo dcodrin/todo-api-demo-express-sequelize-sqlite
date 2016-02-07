@@ -1,4 +1,10 @@
+//there's a specific format for a file that is being called with sequelize.import (what we do in db.js)
+//we have to export a special function that get's passed two arguments by sequelize, the first is the sequelize instance, the second is the Sequelize DataTypes object.
+//See sequelize documentation under Dataypes in API for reference.
+
+
 module.exports = (sequelize, DataTypes)=> {
+    //Notice that we no longer call Sequelize.STRING
     return sequelize.define('todo', {
         description: {
             type: DataTypes.STRING,
