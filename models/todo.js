@@ -7,7 +7,7 @@ module.exports = (sequelize, DataTypes)=> {
     //Notice that we no longer call Sequelize.STRING
     return sequelize.define('todo', {
         description: {
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT,
             allowNull: false,
             validate: {
                 len: [1, 250]
