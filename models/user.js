@@ -85,7 +85,7 @@ module.exports = (sequelize, DataTypes)=> {
                 //the type is used to differentiate between login or forgotten password for example.
                 //type is a string (ex "authentication")
                 if (typeof type !== "string") {
-                    return undefined;
+                    return null;
                 }
                 //We make use of try catch for this part. Try will try to run the code and if there is an error it
                 // will be passed onto catch.
@@ -102,7 +102,7 @@ module.exports = (sequelize, DataTypes)=> {
                 }
                 catch (e) {
                     console.error(e);
-                    return undefined;
+                    return null;
                 }
             }
         },
@@ -149,8 +149,6 @@ module.exports = (sequelize, DataTypes)=> {
                         var tokenData = JSON.parse(bytes.toString(crypto.enc.Utf8));
 
                         //Now we have access to the id and type
-                        console.log(tokenData);
-
                         user.findById(tokenData.id).then((user)=>{
                             if(user){
                                 resolve(user);

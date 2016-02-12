@@ -27,6 +27,7 @@ module.exports = (sequelize, DataTypes)=> {
                 }
             },
             completedIsBoolean: function () {
+                console.log(this.completed)
                 if (typeof this.completed !== "boolean") {
                     throw new Error("Completed must be boolean")
                 }

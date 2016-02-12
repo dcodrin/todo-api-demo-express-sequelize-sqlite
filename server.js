@@ -44,6 +44,8 @@ app.get("/todos/:id",middleware.requireAuthentication, (req, res)=> {
 //POST /todos new todo
 app.post("/todos", middleware.requireAuthentication, (req, res)=> {
 
+    console.log(req.body);
+
     var newTodo = {};
 
     if (req.body.description) {
@@ -52,12 +54,12 @@ app.post("/todos", middleware.requireAuthentication, (req, res)=> {
     if (req.body.completed) {
         newTodo.completed = req.body.completed
     }
+    req.user.createTodo(newTodo).then((todo)=>{
+        res.json(todo);
+    }).catch((e)=>{
+        res.json(e);
+    })
 
-    db.todo.create(newTodo).then((todo)=>{
-       req.user.addTodo(todo).then(()=>{
-           console.log("HELLO")
-       })
-    });
 });
 //DELETE /todos/:id delete todo by id
 app.delete("/todos/:id",middleware.requireAuthentication, (req, res)=> {
