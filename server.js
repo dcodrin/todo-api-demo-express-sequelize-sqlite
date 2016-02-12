@@ -44,8 +44,6 @@ app.get("/todos/:id",middleware.requireAuthentication, (req, res)=> {
 //POST /todos new todo
 app.post("/todos", middleware.requireAuthentication, (req, res)=> {
 
-    console.log(req.body);
-
     var newTodo = {};
 
     if (req.body.description) {
@@ -79,16 +77,13 @@ app.delete("/todos/:id",middleware.requireAuthentication, (req, res)=> {
 });
 //PUT /todos/id
 app.put("/todos/:id",middleware.requireAuthentication, (req, res)=> {
-
     var update = {};
-
     if (req.body.description) {
         update.description = req.body.description
     }
     if (req.body.completed) {
         update.completed = req.body.completed
     }
-
     db.todo.findById(Number(req.params.id))
         .then((todo)=> {
             if (todo) {
