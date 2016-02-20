@@ -151,7 +151,7 @@ app.post("/users/login", (req, res)=> {
     });
 });
 //When creating new associations you have to recreate the database tables
-db.sequelize.sync().then(()=> {
+db.sequelize.sync({force: true}).then(()=> {
     app.listen(PORT, ()=> {
         console.log(`Express listening on port ${PORT}`)
     });
