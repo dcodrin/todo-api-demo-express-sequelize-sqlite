@@ -14,7 +14,7 @@ app.get("/", (req, res)=> {
     res.send("Todo API Root");
 });
 //GET /todos all todos
-app.get("/todos",middleware.requireAuthentication, (req, res)=> {
+app.get("/todos", middleware.requireAuthentication, (req, res)=> {
     //Use the built-in .json() method to send back our data in JSON format.
     var query = req.query;
     var where = {};
@@ -37,7 +37,7 @@ app.get("/todos",middleware.requireAuthentication, (req, res)=> {
     })
 });
 //GET /todos/:id get individual todo
-app.get("/todos/:id",middleware.requireAuthentication, (req, res)=> {
+app.get("/todos/:id", middleware.requireAuthentication, (req, res)=> {
     //Use sequelize findOne to retrieve a match. Notice we check for userId.
     db.todo.findOne({where: {userId: req.user.id, id: Number(req.params.id)}}).then((todo)=> {
         todo ? res.json(todo) : res.status(404).send("Todo not found.")
@@ -56,15 +56,15 @@ app.post("/todos", middleware.requireAuthentication, (req, res)=> {
     if (req.body.completed) {
         newTodo.completed = req.body.completed
     }
-    req.user.createTodo(newTodo).then((todo)=>{
+    req.user.createTodo(newTodo).then((todo)=> {
         res.json(todo);
-    }).catch((e)=>{
+    }).catch((e)=> {
         res.json(e);
     })
 
 });
 //DELETE /todos/:id delete todo by id
-app.delete("/todos/:id",middleware.requireAuthentication, (req, res)=> {
+app.delete("/todos/:id", middleware.requireAuthentication, (req, res)=> {
     db.todo.destroy({
         where: {
             userId: req.user.id,
@@ -81,7 +81,7 @@ app.delete("/todos/:id",middleware.requireAuthentication, (req, res)=> {
     })
 });
 //PUT /todos/id
-app.put("/todos/:id",middleware.requireAuthentication, (req, res)=> {
+app.put("/todos/:id", middleware.requireAuthentication, (req, res)=> {
     var update = {};
     console.log(req.user.id)
     if (req.body.description) {
@@ -90,10 +90,12 @@ app.put("/todos/:id",middleware.requireAuthentication, (req, res)=> {
     if (req.body.completed) {
         update.completed = req.body.completed
     }
-    db.todo.findOne({where: {
-        id: Number(req.params.id),
-        userId: req.user.id
-    }})
+    db.todo.findOne({
+            where: {
+                id: Number(req.params.id),
+                userId: req.user.id
+            }
+        })
         .then((todo)=> {
             if (todo) {
                 return todo.update(update)
@@ -128,9 +130,20 @@ app.post("/users", (req, res)=> {
     });
 });
 
+//DELETE /users/login
+
+app.delete("/users/login", middleware.requireAuthentication, (req, res)=>{
+    req.token.destroy().then(()=>{
+        res.status(204).send("Logged out!");
+    }).catch(()=>{
+        res.status(500).send();
+    });
+});
+
 //POST /users/login
 app.post("/users/login", (req, res)=> {
     var loginUser = {};
+    var userInstance;
     if (typeof req.body.email === "string") {
         loginUser.email = req.body.email
     }
@@ -140,13 +153,14 @@ app.post("/users/login", (req, res)=> {
     db.user.authentication(loginUser).then((user)=> {
         //The token will be sent in the header.
         var token = user.generateToken("authentication");
-
-        if (token) {
-            res.header("Auth", token).json(user.toPublicJSON());
-        } else {
-            return res.status(401).send("Authentication failed.")
-        }
-    }, ()=> {
+        userInstance = user;
+        return db.token.create({
+            token: token
+        });
+    }).then((token)=> {
+        console.log(token);
+        res.header("Auth", token.token).json(userInstance.toPublicJSON());
+    }).catch(()=> {
         res.status(401).send("Authentication failed.")
     });
 });
