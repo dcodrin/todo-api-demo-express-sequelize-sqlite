@@ -22,10 +22,6 @@ module.exports = (sequelize, DataTypes)=> {
                 isEmail: true
             }
         },
-        //Salting means adding a random set of characters to the string password before it's hashed. This is to make sure that no two passwords are the same.
-        salt: {
-            type: DataTypes.STRING
-        },
         passwordHash: {
             type: DataTypes.STRING
         },
@@ -42,15 +38,10 @@ module.exports = (sequelize, DataTypes)=> {
             //The set function receives the current value, in this case the password.
             set: function (value) {
                 //The 'value' in this case is the password which gets passed in by sequelize to the function
-                //create the salt
-                var salt = bcrypt.genSaltSync(10);
-                //we are salting and hashing the password
-                var hashedPassword = bcrypt.hashSync(value, salt);
+                var hashedPassword = bcrypt.hashSync(value, 10);
                 //the this in this case refers to the user model
                 //We are setting the password to our value;
                 this.setDataValue('password', value);
-                //We are setting the salt to the salt variable
-                this.setDataValue('salt', salt);
                 //We are setting the passwordHash field using the hashedPassword variable.
                 this.setDataValue('passwordHash', hashedPassword);
             }

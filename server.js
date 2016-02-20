@@ -18,6 +18,9 @@ app.get("/todos",middleware.requireAuthentication, (req, res)=> {
     //Use the built-in .json() method to send back our data in JSON format.
     var query = req.query;
     var where = {};
+    //Only getting the todos associated with the logged in user
+    where.userId = req.user.id;
+    //We are building our query object based on the query params
     if (query.completed) {
         where.completed = query.completed === "true" ? true : false
     }
@@ -26,6 +29,7 @@ app.get("/todos",middleware.requireAuthentication, (req, res)=> {
             $like: `%${query.description}%`
         }
     }
+    //We retrieve the todos based on our query object
     db.todo.findAll({where: where}).then((todos)=> {
         todos.length > 0 ? res.json(todos) : res.status(404).send("No matches found");
     }).catch((e)=> {
@@ -34,8 +38,8 @@ app.get("/todos",middleware.requireAuthentication, (req, res)=> {
 });
 //GET /todos/:id get individual todo
 app.get("/todos/:id",middleware.requireAuthentication, (req, res)=> {
-    //Use sequelize findById to retrieve a match
-    db.todo.findById(Number(req.params.id)).then((todo)=> {
+    //Use sequelize findOne to retrieve a match. Notice we check for userId.
+    db.todo.findOne({where: {userId: req.user.id, id: Number(req.params.id)}}).then((todo)=> {
         todo ? res.json(todo) : res.status(404).send("Todo not found.")
     }).catch((e)=> {
         return res.json(e);
@@ -63,6 +67,7 @@ app.post("/todos", middleware.requireAuthentication, (req, res)=> {
 app.delete("/todos/:id",middleware.requireAuthentication, (req, res)=> {
     db.todo.destroy({
         where: {
+            userId: req.user.id,
             id: Number(req.params.id)
         }
     }).then((rowsDeleted)=> {
@@ -78,13 +83,17 @@ app.delete("/todos/:id",middleware.requireAuthentication, (req, res)=> {
 //PUT /todos/id
 app.put("/todos/:id",middleware.requireAuthentication, (req, res)=> {
     var update = {};
+    console.log(req.user.id)
     if (req.body.description) {
         update.description = req.body.description
     }
     if (req.body.completed) {
         update.completed = req.body.completed
     }
-    db.todo.findById(Number(req.params.id))
+    db.todo.findOne({where: {
+        id: Number(req.params.id),
+        userId: req.user.id
+    }})
         .then((todo)=> {
             if (todo) {
                 return todo.update(update)
@@ -128,7 +137,6 @@ app.post("/users/login", (req, res)=> {
     if (typeof req.body.password === "string") {
         loginUser.password = req.body.password
     }
-    console.log(loginUser);
     db.user.authentication(loginUser).then((user)=> {
         //The token will be sent in the header.
         var token = user.generateToken("authentication");
@@ -142,6 +150,7 @@ app.post("/users/login", (req, res)=> {
         res.status(401).send("Authentication failed.")
     });
 });
+//When creating new associations you have to recreate the database tables
 db.sequelize.sync().then(()=> {
     app.listen(PORT, ()=> {
         console.log(`Express listening on port ${PORT}`)
